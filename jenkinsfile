@@ -1,0 +1,61 @@
+pipeline {
+  agent any
+
+  environment {
+    IMAGE_NAME = 'nodejs-web-app'
+    IMAGE_TAG = 'latest'
+    DOCKER_HUB_USER = 'wahbamousa' // change this to your real Docker Hub user
+  }
+
+  stages {
+    stage('🧪 Checkout Code') {
+      steps {
+        git 'https://github.com/YourOrgName/YourNodeJsRepo.git'
+      }
+    }
+
+    stage('📦 Install Dependencies') {
+      steps {
+        sh 'npm ci'
+      }
+    }
+
+    stage('🔍 Lint or Test') {
+      steps {
+        echo "No test files yet. Add Mocha/Jest in the future."
+      }
+    }
+
+    stage('🐳 Build Docker Image') {
+      steps {
+        sh """
+        docker build -t $DOCKER_HUB_USER/$IMAGE_NAME:$IMAGE_TAG .
+        """
+      }
+    }
+
+    stage('🔐 Trivy Scan') {
+      steps {
+        sh 'trivy image $DOCKER_HUB_USER/$IMAGE_NAME:$IMAGE_TAG || true'
+      }
+    }
+
+    stage('🚀 Push to Docker Hub') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'docker-hub-creds', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+          sh """
+          echo "$PASSWORD" | docker login -u "$USERNAME" --password-stdin
+          docker push $DOCKER_HUB_USER/$IMAGE_NAME:$IMAGE_TAG
+          docker logout
+          """
+        }
+      }
+    }
+  }
+
+  post {
+    always {
+      echo '✅ Pipeline finished.'
+    }
+  }
+}
