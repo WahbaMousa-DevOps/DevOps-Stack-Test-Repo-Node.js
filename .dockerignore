@@ -23,3 +23,7 @@ coverage/
 Dockerfile
 .dockerignore
 docker-compose.override.yml
+
+tests/
+.git
+dist/  # if built inside Docker, exclude from context
